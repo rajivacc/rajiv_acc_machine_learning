@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Apr 19 10:08:35 2018
+
+@author: rajiv
+"""
+
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+
+# Function converts the categorical variables into numerical values 
+# e.g. Col 'Sex' contains strings male and female so some algorithms works
+# only on numerical data they do not understand string values we need
+# to convert this column values to 0 and 1. So '0' will respresent female
+# '1' will represent male or vice-versa.
+def encode_labels(X_tttt, X_trrr):
+    le = LabelEncoder()
+    #Ieterating over all the common columns in train and test
+    for col in X_tttt.columns.values:
+        #Encoding only categorical variables
+        if X_tttt[col].dtypes=='object':
+            # Using whole data to form an exhaustive list of levels
+            data = X_trrr[col].append(X_tttt[col])
+            le.fit(data.values)
+            X_trrr[col] = le.transform(X_trrr[col])
+            X_tttt[col] = le.transform(X_tttt[col])
+    return X_trrr, X_tttt
+
+def get_training_data(file_path, feature_list, target_col):
+    input_csv = pd.read_csv(file_path)
+    input_csv.fillna(axis=0, value='0', inplace=True)
+    X_train = input_csv[feature_list]
+    y_train = input_csv[target_col]
+    return X_train, y_train
+
+def get_test_data(file_path, feature_list):
+    test_csv = pd.read_csv(file_path)
+    test_csv.fillna(axis=0, value='0', inplace=True)
+    X_test = test_csv[feature_list]
+    return X_test
+
+def knn_classifier(X_train, y_train, X_test):
+    KNN = KNeighborsClassifier(n_neighbors=5)
+    KNN.fit(X_train, y_train)
+    return KNN.predict(X_test)
+
+def LR_classifier(X_train, y_train, X_test):
+    LR = LogisticRegression()
+    LR.fit(X_train, y_train)
+    return LR.predict(X_test)
+
+def algo_based_dynamic_predictor(predictor_algo, X_train, y_train, X_test):
+    if(predictor_algo=='KNN'):
+        return knn_classifier(X_train, y_train, X_test)
+    if(predictor_algo=='LR'):
+        return LR_classifier(X_train, y_train, X_test)
+        
+fetaure_list = ['Pclass','Age','SibSp','Parch']
+target = 'Survived'
+X_t, y_t = get_training_data('Data/train.csv',fetaure_list, target)
+X_ttest = get_test_data('Data/test.csv',fetaure_list)
+
+y = algo_based_dynamic_predictor('KNN',X_t, y_t, X_t)
+
+print(accuracy_score(y, y_t))
